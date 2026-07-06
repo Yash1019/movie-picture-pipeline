@@ -82,5 +82,5 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          kubectl apply -f deployment.yaml
+          kubectl apply -f k8s/deployment.yaml
           kubectl set image deployment/frontend frontend=$REGISTRY/$REPOSITORY:$IMAGE_TAG
