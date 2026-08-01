@@ -32,8 +32,8 @@ jobs:
       - name: Deploy Frontend to Kubernetes using Kustomize
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: mp-frontend
-          IMAGE_TAG: ${{ github.sha }}
+          ECR_REPOSITORY: frontend
+          IMAGE_TAG: latest
         run: |
           cd starter/frontend/k8s
           kustomize edit set image frontend=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
