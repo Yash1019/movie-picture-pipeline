@@ -2,62 +2,66 @@ name: Frontend CI Pipeline
 
 on:
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
     paths:
       - 'starter/frontend/**'
   workflow_dispatch:
 
 jobs:
   lint:
+    name: Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: starter/frontend
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
 
       - name: Install Dependencies
-        run: |
-          cd starter/frontend
-          npm ci
+        run: npm ci
 
-      - name: Run Linter
-        run: |
-          cd starter/frontend
-          npm run lint --if-present
+      - name: Run Lint
+        run: npm run lint
 
   test:
+    name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: starter/frontend
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
 
       - name: Install Dependencies
-        run: |
-          cd starter/frontend
-          npm ci
+        run: npm ci
 
       - name: Run Tests
-        run: |
-          cd starter/frontend
-          npm test -- --watchAll=false
+        run: npm test
 
   build:
+    name: Build Docker Image
     needs: [lint, test]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: starter/frontend
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Build Docker Image Locally
-        run: |
-          cd starter/frontend
-          docker build -t frontend:latest .
+      - name: Build Docker Image
+        # CI just tests that the image CAN build successfully. We use a dummy localhost API URL here.
+        run: docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost:5000 -t frontend-test:latest .

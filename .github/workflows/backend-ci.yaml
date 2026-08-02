@@ -2,68 +2,69 @@ name: Backend CI Pipeline
 
 on:
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
     paths:
       - 'starter/backend/**'
   workflow_dispatch:
 
 jobs:
   lint:
+    name: Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: starter/backend
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install Pipenv
-        run: pip install pipenv
-
       - name: Install Dependencies
         run: |
-          cd starter/backend
-          pipenv install --dev
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run Linter
-        run: |
-          cd starter/backend
-          pipenv run lint
+      - name: Run Lint
+        run: pip install flake8 && flake8 .
 
   test:
+    name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: starter/backend
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install Pipenv
-        run: pip install pipenv
-
       - name: Install Dependencies
         run: |
-          cd starter/backend
-          pipenv install --dev
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run Tests
-        run: |
-          cd starter/backend
-          pipenv run test
+        run: pytest
 
   build:
+    name: Build Docker Image
     needs: [lint, test]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: starter/backend
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Build Docker Image Locally
-        run: |
-          cd starter/backend
-          docker build -t backend:latest .
+      - name: Build Docker Image
+        run: docker build -t backend-test:latest .
