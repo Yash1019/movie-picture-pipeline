@@ -1,34 +1,63 @@
 name: Frontend CI Pipeline
 
 on:
-  push:
-    branches: [ "main" ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'starter/frontend/**'
+  workflow_dispatch:
 
 jobs:
-  build-and-push:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          node-version: '16'
 
-      - name: Log in to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build, Tag, and Push Frontend Image to ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: frontend
-          IMAGE_TAG: ${{ github.sha }}
+      - name: Install Dependencies
         run: |
           cd starter/frontend
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          npm ci
+
+      - name: Run Linter
+        run: |
+          cd starter/frontend
+          npm run lint --if-present
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install Dependencies
+        run: |
+          cd starter/frontend
+          npm ci
+
+      - name: Run Tests
+        run: |
+          cd starter/frontend
+          npm test -- --watchAll=false
+
+  build:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Build Docker Image Locally
+        run: |
+          cd starter/frontend
+          docker build -t frontend:latest .
